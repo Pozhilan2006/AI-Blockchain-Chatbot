@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Web3 Chatbot</title>
+    <link rel="stylesheet" href="./chat-interface.css">
+</head>
+
+<body>
+    <!-- Main Chat Interface Container -->
+    <div class="chat-interface">
+
+        <!-- Header: Wallet Status Bar -->
+        <header class="chat-interface__header">
+            <div class="header__left">
+                <div class="header__logo">
+                    🤖
+                </div>
+                <h1 class="header__title">AI Web3 Assistant</h1>
+            </div>
+
+            <div class="header__right">
+                <!-- Connection Status -->
+                <div class="status-indicator">
+                    <span class="status-indicator__dot"></span>
+                    <span class="status-indicator__text">Connected</span>
+                </div>
+
+                <!-- Wallet Address -->
+                <div class="wallet-address" title="Click to copy">
+                    0x1234...5678
+                </div>
+            </div>
+        </header>
+
+        <!-- Messages Area (Scrollable) -->
+        <main class="chat-interface__messages" id="messagesContainer">
+            <div class="messages__container">
+
+                <!-- AI Message Example -->
+                <div class="message message--ai">
+                    <div class="message__avatar">
+                        🤖
+                    </div>
+                    <div class="message__content">
+                        <div class="message__text">
+                            Hello! I'm your AI Web3 assistant. I can help you send ETH, transfer tokens, swap on DEXs,
+                            and manage your NFTs. What would you like to do?
+                        </div>
+                        <div class="message__timestamp">
+                            2:34 PM
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Message Example -->
+                <div class="message message--user">
+                    <div class="message__avatar">
+                        👤
+                    </div>
+                    <div class="message__content">
+                        <div class="message__text">
+                            What's my balance?
+                        </div>
+                        <div class="message__timestamp">
+                            2:35 PM
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Message with longer content -->
+                <div class="message message--ai">
+                    <div class="message__avatar">
+                        🤖
+                    </div>
+                    <div class="message__content">
+                        <div class="message__text">
+                            Your current balance is:<br><br>
+                            • ETH: 2.5 ETH ($4,250.00 USD)<br>
+                            • USDC: 1,000 USDC<br>
+                            • DAI: 500 DAI<br><br>
+                            Would you like to see more details or perform a transaction?
+                        </div>
+                        <div class="message__timestamp">
+                            2:35 PM
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Typing Indicator (shown when AI is generating response) -->
+                <!-- Uncomment to show:
+                <div class="typing-indicator">
+                    <div class="typing-indicator__avatar">
+                        🤖
+                    </div>
+                    <div class="typing-indicator__content">
+                        <span class="typing-indicator__dot"></span>
+                        <span class="typing-indicator__dot"></span>
+                        <span class="typing-indicator__dot"></span>
+                    </div>
+                </div>
+                -->
+
+            </div>
+        </main>
+
+        <!-- Input Bar (Fixed at Bottom) -->
+        <footer class="chat-interface__input-bar">
+            <!-- Attach Button (Optional) -->
+            <button class="input-bar__attach" aria-label="Attach file" title="Attach file">
+                📎
+            </button>
+
+            <!-- Input Field -->
+            <input type="text" class="input-bar__field" placeholder="Type your message here..."
+                aria-label="Type your message" id="messageInput" />
+
+            <!-- Send Button -->
+            <button class="input-bar__send" aria-label="Send message" id="sendButton" disabled>
+                🚀
+            </button>
+        </footer>
+
+    </div>
+
+    <!-- Optional: Minimal JavaScript for interactions -->
+    <script>
+        // Auto-scroll to bottom
+        function scrollToBottom() {
+            const messagesContainer = document.getElementById('messagesContainer');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Enable/disable send button based on input
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+
+        messageInput.addEventListener('input', function () {
+            sendButton.disabled = this.value.trim() === '';
+        });
+
+        // Send message on Enter key
+        messageInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && !sendButton.disabled) {
+                // Trigger send action
+                console.log('Send message:', this.value);
+                this.value = '';
+                sendButton.disabled = true;
+            }
+        });
+
+        // Send button click
+        sendButton.addEventListener('click', function () {
+            if (!this.disabled) {
+                console.log('Send message:', messageInput.value);
+                messageInput.value = '';
+                this.disabled = true;
+            }
+        });
+
+        // Initial scroll to bottom
+        scrollToBottom();
+    </script>
+</body>
+
+</html>

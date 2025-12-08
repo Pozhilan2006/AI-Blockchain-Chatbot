@@ -4,8 +4,12 @@ import { parseIntent, generateClarifyingQuestion, validateIntentParams, formatIn
 import { TransactionPreview } from './TransactionPreview';
 import { BalanceDisplay } from './BalanceDisplay';
 import { TransactionHistory } from './TransactionHistory';
+import { CryptoSidebar } from './CryptoSidebar';
 import { getChainById } from '../config/chains';
 import { formatAddress } from '../utils/ethereum';
+import '../styles/chat-interface.css';
+import '../styles/crypto-sidebar.css';
+import '../styles/message-bubbles.css';
 
 interface ChatInterfaceProps {
     address: string;
@@ -146,141 +150,220 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ address, chainId, 
         addAssistantMessage('Transaction cancelled.');
     }
 
+    function formatTime(date: Date): string {
+        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function getInitials(addr: string): string {
+        return addr.slice(2, 4).toUpperCase();
+    }
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-            {/* Header */}
-            <div className="bg-white/10 backdrop-blur-lg border-b border-white/10">
-                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
-                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
+        <div className="chat-interface">
+            <div className="chat-interface__main">
+                {/* Header */}
+                <header className="chat-interface__header">
+                    <div className="header__left">
+                        <div className="header__logo">
+                            🤖
                         </div>
-                        <div>
-                            <h1 className="text-white font-bold text-lg">AI Web3 Chatbot</h1>
-                            <p className="text-gray-400 text-sm">{chain?.name || 'Unknown Chain'}</p>
-                        </div>
+                        <h1 className="header__title">AI Web3 Assistant</h1>
                     </div>
 
-                    <div className="flex items-center space-x-4">
-                        <div className="text-right">
-                            <p className="text-gray-400 text-xs">Connected</p>
-                            <p className="text-white text-sm font-mono">{formatAddress(address)}</p>
+                    <div className="header__right">
+                        <div className="status-indicator">
+                            <span className="status-indicator__dot"></span>
+                            <span className="status-indicator__text">Connected</span>
                         </div>
-                        <button
-                            onClick={onLogout}
-                            className="bg-red-500/20 hover:bg-red-500/30 text-red-300 px-4 py-2 rounded-lg text-sm transition-colors"
-                        >
-                            Disconnect
-                        </button>
+
+                        <div className="wallet-address" title="Click to copy">
+                            {formatAddress(address)}
+                        </div>
                     </div>
-                </div>
-            </div>
+                </header>
 
-            {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-4 py-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Chat Area */}
-                    <div className="lg:col-span-2">
-                        <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 200px)' }}>
-                            {/* Messages */}
-                            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                                {messages.map((message) => (
-                                    <div
-                                        key={message.id}
-                                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} fade-in`}
-                                    >
-                                        <div
-                                            className={`max-w-[80%] rounded-2xl px-4 py-3 ${message.role === 'user'
-                                                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-                                                : 'bg-white/10 text-gray-100'
-                                                }`}
-                                        >
-                                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                                            <p className="text-xs opacity-70 mt-1">
-                                                {message.timestamp.toLocaleTimeString()}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {isProcessing && (
-                                    <div className="flex justify-start">
-                                        <div className="bg-white/10 rounded-2xl px-4 py-3">
-                                            <div className="flex space-x-2">
-                                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div ref={messagesEndRef} />
-                            </div>
-
-                            {/* Input Area */}
-                            <div className="border-t border-white/10 p-4">
-                                <div className="flex space-x-2">
-                                    <input
-                                        type="text"
-                                        value={input}
-                                        onChange={(e) => setInput(e.target.value)}
-                                        onKeyPress={handleKeyPress}
-                                        placeholder="Type a message... (e.g., 'Send 0.1 ETH to 0x...')"
-                                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        disabled={isProcessing}
-                                    />
-                                    <button
-                                        onClick={handleSend}
-                                        disabled={isProcessing || !input.trim()}
-                                        className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-all disabled:cursor-not-allowed"
-                                    >
-                                        Send
-                                    </button>
+                {/* Messages Area */}
+                <main className="chat-interface__messages">
+                    <div className="messages__container">
+                        {messages.map((message) => (
+                            <div
+                                key={message.id}
+                                className={`message message--${message.role === 'user' ? 'user' : 'ai'}`}
+                            >
+                                <div className="message__avatar">
+                                    {message.role === 'user' ? getInitials(address) : '🤖'}
                                 </div>
-
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                    <button
-                                        onClick={() => setInput('What\'s my balance?')}
-                                        className="text-xs bg-white/5 hover:bg-white/10 text-gray-300 px-3 py-1 rounded-full transition-colors"
-                                    >
-                                        Check Balance
-                                    </button>
-                                    <button
-                                        onClick={() => setInput('Show my address')}
-                                        className="text-xs bg-white/5 hover:bg-white/10 text-gray-300 px-3 py-1 rounded-full transition-colors"
-                                    >
-                                        Show Address
-                                    </button>
-                                    <button
-                                        onClick={() => setInput('Show transaction history')}
-                                        className="text-xs bg-white/5 hover:bg-white/10 text-gray-300 px-3 py-1 rounded-full transition-colors"
-                                    >
-                                        History
-                                    </button>
+                                <div className="message__content">
+                                    <div className="message__text">
+                                        {message.content.split('\n').map((line, i) => (
+                                            <React.Fragment key={i}>
+                                                {line}
+                                                {i < message.content.split('\n').length - 1 && <br />}
+                                            </React.Fragment>
+                                        ))}
+                                    </div>
+                                    <div className="message__timestamp">
+                                        {formatTime(message.timestamp)}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        ))}
 
-                    {/* Sidebar */}
-                    <div className="space-y-6">
-                        {showBalance && <BalanceDisplay address={address} chainId={chainId} />}
-                        {showHistory && <TransactionHistory address={address} chainId={chainId} />}
-                        {showTransactionPreview && currentIntent && (
-                            <TransactionPreview
-                                intent={currentIntent}
-                                address={address}
-                                chainId={chainId}
-                                onComplete={handleTransactionComplete}
-                                onCancel={handleTransactionCancel}
-                            />
+                        {isProcessing && (
+                            <div className="typing-indicator">
+                                <div className="typing-indicator__avatar">
+                                    🤖
+                                </div>
+                                <div className="typing-indicator__content">
+                                    <span className="typing-indicator__dot"></span>
+                                    <span className="typing-indicator__dot"></span>
+                                    <span className="typing-indicator__dot"></span>
+                                </div>
+                            </div>
                         )}
+
+                        <div ref={messagesEndRef} />
                     </div>
-                </div>
+                </main>
+
+                {/* Input Bar */}
+                <footer className="chat-interface__input-bar">
+                    <button className="input-bar__attach" aria-label="Attach file" title="Attach file">
+                        📎
+                    </button>
+
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Type your message here..."
+                        className="input-bar__field"
+                        disabled={isProcessing}
+                        aria-label="Type your message"
+                    />
+
+                    <button
+                        onClick={handleSend}
+                        disabled={isProcessing || !input.trim()}
+                        className="input-bar__send"
+                        aria-label="Send message"
+                    >
+                        🚀
+                    </button>
+                </footer>
+
+                {/* Transaction Preview Modal (Overlay) */}
+                {showTransactionPreview && currentIntent && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.7)',
+                        backdropFilter: 'blur(8px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        padding: '20px'
+                    }}>
+                        <TransactionPreview
+                            intent={currentIntent}
+                            address={address}
+                            chainId={chainId}
+                            onComplete={handleTransactionComplete}
+                            onCancel={handleTransactionCancel}
+                        />
+                    </div>
+                )}
+
+                {/* Balance Display (Overlay) */}
+                {showBalance && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.7)',
+                        backdropFilter: 'blur(8px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        padding: '20px'
+                    }}>
+                        <div style={{ position: 'relative', maxWidth: '500px', width: '100%' }}>
+                            <button
+                                onClick={() => setShowBalance(false)}
+                                style={{
+                                    position: 'absolute',
+                                    top: '-10px',
+                                    right: '-10px',
+                                    background: '#F6851B',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '32px',
+                                    height: '32px',
+                                    color: 'white',
+                                    cursor: 'pointer',
+                                    fontSize: '18px',
+                                    zIndex: 1001
+                                }}
+                            >
+                                ×
+                            </button>
+                            <BalanceDisplay address={address} chainId={chainId} />
+                        </div>
+                    </div>
+                )}
+
+                {/* Transaction History (Overlay) */}
+                {showHistory && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.7)',
+                        backdropFilter: 'blur(8px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        padding: '20px'
+                    }}>
+                        <div style={{ position: 'relative', maxWidth: '600px', width: '100%', maxHeight: '80vh', overflow: 'auto' }}>
+                            <button
+                                onClick={() => setShowHistory(false)}
+                                style={{
+                                    position: 'absolute',
+                                    top: '-10px',
+                                    right: '-10px',
+                                    background: '#F6851B',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '32px',
+                                    height: '32px',
+                                    color: 'white',
+                                    cursor: 'pointer',
+                                    fontSize: '18px',
+                                    zIndex: 1001
+                                }}
+                            >
+                                ×
+                            </button>
+                            <TransactionHistory address={address} chainId={chainId} />
+                        </div>
+                    </div>
+                )}
             </div>
+
+            {/* Crypto Sidebar */}
+            <CryptoSidebar currentChainId={chainId} />
         </div>
     );
 };
