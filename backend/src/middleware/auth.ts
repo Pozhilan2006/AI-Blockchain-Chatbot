@@ -6,11 +6,12 @@ export interface AuthRequest extends Request {
         address: string;
         userId: number;
     };
+    headers: any; // Explicitly add headers if using custom types or allow generic Request inheritance
 }
 
-export function authenticateToken(req: AuthRequest, res: Response, next: NextFunction) {
+export function authenticateToken(req: any, res: Response, next: NextFunction) {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    const token = authHeader && (authHeader as string).split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
         return res.status(401).json({ error: 'Access token required' });

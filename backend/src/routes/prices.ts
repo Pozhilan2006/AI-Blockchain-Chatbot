@@ -47,10 +47,9 @@ router.get('/:symbol', async (req, res) => {
             `https://api.coingecko.com/api/v3/simple/price`,
             {
                 params: {
-                    ids: coinId,
                     vs_currencies: 'usd',
                 },
-                headers: coinGeckoApiKey ? { 'X-Cg-Pro-Api-Key': process.env.COINGECKO_API_KEY } : {},
+                headers: process.env.COINGECKO_API_KEY ? { 'X-Cg-Pro-Api-Key': process.env.COINGECKO_API_KEY } : {},
             }
         );
 
