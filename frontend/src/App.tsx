@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ConnectWallet } from './components/ConnectWallet';
 import { Auth } from './components/Auth';
 import { ChatInterface } from './components/ChatInterface';
-import { LandingPage } from './components/LandingPage';
+
 
 function App() {
     const [address, setAddress] = useState<string>('');
@@ -10,15 +10,12 @@ function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [authToken, setAuthToken] = useState<string>('');
 
-    const [showLanding, setShowLanding] = useState(true);
-
     useEffect(() => {
         // Check for existing auth token
         const token = localStorage.getItem('authToken');
         if (token) {
             setAuthToken(token);
             setIsAuthenticated(true);
-            setShowLanding(false); // Skip landing if already logged in
         }
     }, []);
 
@@ -38,17 +35,17 @@ function App() {
         setAuthToken('');
         setAddress('');
         setChainId(0);
-        setShowLanding(true); // Return to landing on logout
         // window.location.reload(); // Removed force reload to keep smooth transition potential
     }
 
-    function handleGetStarted() {
-        setShowLanding(false);
-    }
+    // Show Landing Page -> Connect Wallet directly
+    // if (showLanding && !isAuthenticated) {
+    //     return <LandingPage onGetStarted={handleGetStarted} />;
+    // }
 
-    // Show Landing Page
-    if (showLanding && !isAuthenticated) {
-        return <LandingPage onGetStarted={handleGetStarted} />;
+    // Show wallet connection screen (This IS the Wrapper Landing now)
+    if (!address) {
+        return <ConnectWallet onConnect={handleConnect} />;
     }
 
     // Show wallet connection screen
