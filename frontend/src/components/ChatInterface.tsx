@@ -16,7 +16,7 @@ interface ChatInterfaceProps {
     onLogout: () => void;
 }
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ address, chainId, authToken, onLogout }) => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ address, chainId }) => {
     const [messages, setMessages] = useState<ChatMessage[]>([
         {
             id: '1',
@@ -152,10 +152,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ address, chainId, 
         return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     }
 
-    function getInitials(addr: string): string {
-        return addr.slice(2, 4).toUpperCase();
-    }
-
     return (
         <div className="flex h-screen w-full bg-brand-black overflow-hidden font-sans text-brand-text">
             {/* Main Chat Area */}
@@ -193,8 +189,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ address, chainId, 
                             >
                                 {/* Avatar */}
                                 <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border ${message.role === 'user'
-                                        ? 'bg-brand-gray border-white/10'
-                                        : 'bg-white/5 border-white/10'
+                                    ? 'bg-brand-gray border-white/10'
+                                    : 'bg-white/5 border-white/10'
                                     }`}>
                                     {message.role === 'user' ? (
                                         <User className="w-4 h-4 text-gray-400" />
@@ -206,8 +202,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ address, chainId, 
                                 {/* Content */}
                                 <div className="flex flex-col gap-1 min-w-0">
                                     <div className={`px-5 py-3 rounded-2xl text-sm leading-relaxed ${message.role === 'user'
-                                            ? 'bg-brand-orange text-white rounded-tr-sm shadow-[0_4px_20px_rgba(255,77,0,0.2)]'
-                                            : 'bg-white/5 border border-white/5 text-gray-200 rounded-tl-sm'
+                                        ? 'bg-brand-orange text-white rounded-tr-sm shadow-[0_4px_20px_rgba(255,77,0,0.2)]'
+                                        : 'bg-white/5 border border-white/5 text-gray-200 rounded-tl-sm'
                                         }`}>
                                         {message.content.split('\n').map((line, i) => (
                                             <React.Fragment key={i}>

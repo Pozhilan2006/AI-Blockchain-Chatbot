@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Intent, TransactionConfirmation } from '../types';
+import type { Intent } from '../types';
 import {
     prepareEthTransfer,
     prepareERC20Transfer,
@@ -12,7 +12,6 @@ import {
     getTokenMetadata,
 } from '../utils/ethereum';
 import { getTokenAddress, getChainById } from '../config/chains';
-import { formatUnits } from 'ethers';
 
 interface TransactionPreviewProps {
     intent: Intent;
