@@ -1,0 +1,56 @@
+# Deployment Guide
+
+This guide covers how to deploy the **AI Web3 Chatbot** full-stack application.
+
+## 1. Prerequisites
+- **GitHub Account**: Push your code to a GitHub repository.
+- **Vercel Account**: For Frontend deployment.
+- **Render/Railway Account**: For Backend deployment.
+
+## 2. Push to GitHub
+If you haven't already:
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin <your-repo-url>
+git push -u origin main
+```
+
+## 3. Deploy Backend (Render)
+We deploy the backend first to get the `API URL`.
+
+1.  Log in to [Render dashboard](https://dashboard.render.com/).
+2.  Click **New +** -> **Web Service**.
+3.  Connect your GitHub repository.
+4.  **Settings**:
+    -   **Root Directory**: `backend`
+    -   **Build Command**: `npm install && npm run build`
+    -   **Start Command**: `npm start`
+5.  **Environment Variables**:
+    -   `NODE_ENV`: `production`
+    -   `PORT`: `10000` (Render default)
+    -   `CORS_ORIGIN`: `https://your-frontend-url.vercel.app` (You can update this later after deploying frontend)
+6.  **Deploy**. Copy the provided **Backend URL** (e.g., `https://web3-bot-backend.onrender.com`).
+
+## 4. Deploy Frontend (Vercel)
+1.  Log in to [Vercel dashboard](https://vercel.com).
+2.  **Add New...** -> **Project**.
+3.  Import your GitHub repository.
+4.  **Project Settings**:
+    -   **Framework Preset**: Vite
+    -   **Root Directory**: `frontend`
+5.  **Environment Variables**:
+    -   `VITE_API_URL`: Paste your **Backend URL** from Step 3 (e.g., `https://web3-bot-backend.onrender.com`).
+6.  **Deploy**.
+7.  Copy your new **Frontend URL** (e.g., `https://your-app.vercel.app`).
+
+## 5. Finalize Configuration
+1.  Go back to **Render** (Backend).
+2.  Update the `CORS_ORIGIN` environment variable with your actual **Frontend URL**.
+3.  Redeploy the backend (if needed) for changes to take effect.
+
+## Troubleshooting
+- **CORS Errors**: Ensure `CORS_ORIGIN` in backend matches your Frontend URL exactly (remove trailing slashes).
+- **Build Fails**: Check [package.json](file:///f:/AI-Blockchain-Chatbot/backend/package.json) scripts. Ensure `tsc` is in `devDependencies` and installed.

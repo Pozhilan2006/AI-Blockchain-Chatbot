@@ -1,0 +1,10 @@
+Project Title: Intelligent Natural Language Interface for Decentralized Finance (DeFi)
+
+Abstract:
+
+The emergence of blockchain technology and Decentralized Finance (DeFi) has created a sovereign financial ecosystem accessible to anyone with an internet connection. However, the current user experience (UX) landscape remains a critical bottleneck for widespread adoption. Traditional Web3 interfaces compel users to interact with low-level primitives—such as raw hexadecimal cryptographic addresses, complex gas fee estimations, and rigidly structured transaction parameters—which imposes a high cognitive load and increases the likelihood of catastrophic errors. This project addresses these usability challenges by designing and implementing an "AI-Blockchain Chatbot," an intelligent, intent-centric agent that serves as a semantic bridge between human language and blockchain protocols.
+
+Utilizing advanced Natural Language Processing (NLP) techniques and an intent recognition engine, the system parses unstructured conversational inputs (e.g., "Swap 100 USDT for ETH") into precise, machine-executable transaction payloads. The architecture prioritizes user safety and sovereignty by operating as a non-custodial interface, ensuring that private keys remain under user control while providing high-level guidance. A key innovation of this system is its "Pre-Execution Semantic Feedback" mechanism, which simulates the outcome of a transaction and presents it in plain English before meaningful on-chain actions occur. This feedback loop allows users to verify logical intents rather than technical code, significantly mitigating the risks of phishing, slippage, and input errors. By abstracting the complexity of smart contract interactions into a conversational dialogue, this research demonstrates a viable pathway for democratizing access to DeFi, transforming it from a niche technical domain into a universally accessible financial utility.
+
+Keywords:
+Human-Computer Interaction (HCI), Blockchain Usability, Natural Language Understanding (NLU), Decentralized Finance (DeFi), Intent-Centric Architecture, Cognitive Load Reduction, Web3 Accessibility.
