@@ -1,12 +1,9 @@
-import { BrowserProvider, Contract, parseUnits, formatUnits, isAddress, JsonRpcProvider } from 'ethers';
+import { BrowserProvider, Contract, parseUnits, formatUnits, isAddress } from 'ethers';
 import type { TransactionRequest, TransactionReceipt, Token, SwapTransaction, SwapQuote } from '../types';
 import { ERC20_ABI, ERC721_ABI, ERC1155_ABI, UNISWAP_V2_ROUTER_ABI } from '../config/abis';
 import {
-    CHAINS,
     UNISWAP_V2_ROUTER,
     WRAPPED_NATIVE_TOKEN,
-    getChainById,
-    getTokenAddress,
     GAS_BUFFER_PERCENTAGE,
     DEFAULT_SLIPPAGE,
     DEFAULT_DEADLINE_MINUTES,
@@ -38,7 +35,7 @@ export function formatAddress(address: string): string {
 }
 
 // Get current gas prices (EIP-1559)
-export async function getGasPrices(chainId: number) {
+export async function getGasPrices(_chainId: number) {
     const provider = await getProvider();
     const feeData = await provider.getFeeData();
 
@@ -586,10 +583,15 @@ export async function monitorTransaction(
     const provider = await getProvider();
 
     try {
-        const receipt = await provider.waitForTransaction(txHash, 1, timeout);
+        const tx = await provider.getTransaction(txHash);
+        if (!tx) {
+            throw new Error('Transaction not found');
+        }
+
+        const receipt = await tx.wait(1, timeout);
 
         if (!receipt) {
-            throw new Error('Transaction not found or dropped');
+            throw new Error('Transaction execution failed');
         }
 
         return {
@@ -600,10 +602,10 @@ export async function monitorTransaction(
             to: receipt.to || '',
             gasUsed: receipt.gasUsed.toString(),
             status: receipt.status || 0,
-            logs: receipt.logs,
+            logs: receipt.logs as any[],
         };
     } catch (error: any) {
-        if (error.message.includes('timeout')) {
+        if (error.message.includes('timeout') || error.code === 'TIMEOUT') {
             throw new Error('Transaction timeout - check block explorer for status');
         }
         throw error;

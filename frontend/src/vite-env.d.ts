@@ -1,4 +1,4 @@
-# Declare window.ethereum for TypeScript
+// Declare window.ethereum for TypeScript
 declare global {
     interface Window {
         ethereum?: any;

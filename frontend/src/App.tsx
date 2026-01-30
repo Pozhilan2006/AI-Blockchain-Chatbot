@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ConnectWallet } from './components/ConnectWallet';
 import { Auth } from './components/Auth';
 import { ChatInterface } from './components/ChatInterface';
 import { LandingPage } from './components/LandingPage';
-import { getChainById } from './config/chains';
 
 function App() {
     const [address, setAddress] = useState<string>('');
