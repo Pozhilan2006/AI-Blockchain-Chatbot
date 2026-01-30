@@ -38,7 +38,7 @@ export async function getClient() {
 
     // Monkey patch the query method to add logging
     client.query = (...args: any[]) => {
-        return originalQuery(...args);
+        return (originalQuery as any)(...args);
     };
 
     // Monkey patch the release method to prevent double-release
