@@ -10,7 +10,6 @@ import type {
     TransferNFTParams,
 } from '../types';
 import { validateAddress } from './ethereum';
-import { getTokenAddress } from '../config/chains';
 
 // Intent schemas defining triggers and required parameters
 export const INTENT_SCHEMAS: Record<IntentType, IntentSchema> = {

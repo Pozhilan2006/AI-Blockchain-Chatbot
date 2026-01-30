@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { getBlockExplorerUrl } from '../config/chains';
 import type { HistoricalTransaction } from '../types';
 
@@ -93,8 +92,8 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ address,
                                     {tx.type === 'send' ? '↑ Sent' : '↓ Received'}
                                 </span>
                                 <span className={`text-xs px-2 py-1 rounded ${tx.status === 'success' ? 'bg-green-500/20 text-green-300' :
-                                        tx.status === 'failed' ? 'bg-red-500/20 text-red-300' :
-                                            'bg-yellow-500/20 text-yellow-300'
+                                    tx.status === 'failed' ? 'bg-red-500/20 text-red-300' :
+                                        'bg-yellow-500/20 text-yellow-300'
                                     }`}>
                                     {tx.status}
                                 </span>
