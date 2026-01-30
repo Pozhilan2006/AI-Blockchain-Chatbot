@@ -1,168 +1,170 @@
-/* ============================================
-   CRYPTO SIDEBAR STYLES
-   Live prices and network info
-   ============================================ */
-
+/* Automatix Theme Sidebar */
 .crypto-sidebar {
-    width: 320px;
+    width: 280px;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+    background: rgba(10, 10, 10, 0.4);
+    /* Glassy dark */
+    backdrop-filter: blur(20px);
+    display: none;
     height: 100vh;
-    background: var(--color-bg-chat);
-    border-left: 1px solid var(--color-border-subtle);
-    padding: var(--space-xl);
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xl);
+    color: #ededed;
 }
 
-/* Custom Scrollbar */
-.crypto-sidebar::-webkit-scrollbar {
-    width: 6px;
+@media (min-width: 1024px) {
+    .crypto-sidebar {
+        display: block;
+    }
 }
 
-.crypto-sidebar::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.crypto-sidebar::-webkit-scrollbar-thumb {
-    background: var(--color-border-medium);
-    border-radius: var(--radius-xs);
-}
-
-.crypto-sidebar::-webkit-scrollbar-thumb:hover {
-    background: #4A4A4A;
-}
-
-/* Section */
 .sidebar-section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-base);
+    margin-bottom: 2rem;
 }
 
 .sidebar-section__title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--color-text-secondary);
+    font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-/* Live Indicator */
-.live-indicator {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--color-success);
+    letter-spacing: 0.1em;
+    color: #888888;
+    margin-bottom: 1rem;
     font-weight: 600;
-}
-
-.live-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--color-success);
-    animation: livePulse 2s ease-in-out infinite;
-}
-
-@keyframes livePulse {
-
-    0%,
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-
-    50% {
-        opacity: 0.5;
-        transform: scale(1.2);
-    }
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 /* Network Card */
 .network-card {
-    background: var(--color-bg-panel);
-    border: 2px solid var(--color-border-medium);
-    border-radius: var(--radius-md);
-    padding: var(--space-base);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
     display: flex;
     align-items: center;
-    gap: var(--space-md);
-    transition: all var(--transition-normal);
-}
-
-.network-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    gap: 1rem;
 }
 
 .network-card__icon {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
-    color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.network-card__info {
-    flex: 1;
+    font-size: 1.2rem;
 }
 
 .network-card__name {
-    font-size: 16px;
     font-weight: 600;
-    color: var(--color-text-primary);
-    margin-bottom: 4px;
+    font-size: 0.9rem;
 }
 
 .network-card__status {
-    font-size: 13px;
-    color: var(--color-success);
+    font-size: 0.75rem;
+    color: #4ade80;
+    /* Green */
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 0.5rem;
 }
 
 .status-dot {
     width: 6px;
     height: 6px;
+    background-color: #4ade80;
     border-radius: 50%;
-    background: var(--color-success);
-    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
-    animation: glowPulse 2s ease-in-out infinite;
+    box-shadow: 0 0 8px #4ade80;
 }
 
-/* Network List */
-.network-list {
+/* Price List */
+.price-list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm);
+    gap: 0.75rem;
+}
+
+.price-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 12px;
+    transition: background 0.2s;
+}
+
+.price-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.price-card__header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.price-card__icon {
+    width: 24px;
+    height: 24px;
+    background: #262626;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: #a3a3a3;
+}
+
+.price-card__symbol {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.price-card__name {
+    font-size: 0.75rem;
+    color: #888888;
+}
+
+.price-card__price {
+    font-family: monospace;
+    font-size: 0.9rem;
+    text-align: right;
+}
+
+.price-card__change {
+    font-size: 0.75rem;
+    text-align: right;
+}
+
+.price-card__change.positive {
+    color: #4ade80;
+}
+
+.price-card__change.negative {
+    color: #ef4444;
+}
+
+/* Network List Items */
+.network-list {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .network-item {
-    background: var(--color-bg-elevated);
-    border: 1px solid var(--color-border-subtle);
-    border-radius: var(--radius-sm);
-    padding: var(--space-sm) var(--space-md);
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 8px;
     cursor: pointer;
-    transition: all var(--transition-normal);
+    opacity: 0.5;
+    transition: opacity 0.2s;
 }
 
 .network-item:hover {
-    background: var(--color-bg-panel);
-    border-color: var(--color-border-medium);
-    transform: translateX(4px);
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .network-item__icon {
@@ -172,156 +174,5 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
-    color: white;
-}
-
-.network-item__name {
-    font-size: 13px;
-    color: var(--color-text-secondary);
-    font-weight: 500;
-}
-
-/* Price List */
-.price-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-}
-
-/* Price Card */
-.price-card {
-    background: var(--color-bg-panel);
-    border: 1px solid var(--color-border-subtle);
-    border-radius: var(--radius-md);
-    padding: var(--space-md);
-    transition: all var(--transition-normal);
-    cursor: pointer;
-}
-
-.price-card:hover {
-    background: var(--color-bg-elevated);
-    border-color: var(--color-border-medium);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-sm);
-}
-
-.price-card__header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    margin-bottom: var(--space-sm);
-}
-
-.price-card__icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--color-primary) 0%, #FF6B35 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    color: white;
-    box-shadow: 0 2px 8px rgba(246, 133, 27, 0.3);
-}
-
-.price-card__info {
-    flex: 1;
-}
-
-.price-card__symbol {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--color-text-primary);
-    margin-bottom: 2px;
-}
-
-.price-card__name {
-    font-size: 12px;
-    color: var(--color-text-tertiary);
-}
-
-.price-card__data {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.price-card__price {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--color-text-primary);
-    font-family: 'Fira Code', 'SF Mono', 'Consolas', 'Monaco', monospace;
-}
-
-.price-card__change {
-    font-size: 13px;
-    font-weight: 600;
-    padding: 4px 8px;
-    border-radius: var(--radius-xs);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.price-card__change.positive {
-    color: var(--color-success);
-    background: rgba(16, 185, 129, 0.1);
-}
-
-.price-card__change.negative {
-    color: var(--color-error);
-    background: rgba(239, 68, 68, 0.1);
-}
-
-/* Stats Grid */
-.stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-sm);
-}
-
-.stat-card {
-    background: var(--color-bg-panel);
-    border: 1px solid var(--color-border-subtle);
-    border-radius: var(--radius-sm);
-    padding: var(--space-md);
-    text-align: center;
-    transition: all var(--transition-normal);
-}
-
-.stat-card:hover {
-    background: var(--color-bg-elevated);
-    border-color: var(--color-primary);
-    transform: translateY(-2px);
-}
-
-.stat-card__label {
-    font-size: 11px;
-    color: var(--color-text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 6px;
-    font-weight: 600;
-}
-
-.stat-card__value {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--color-text-primary);
-    font-family: 'Fira Code', 'SF Mono', 'Consolas', 'Monaco', monospace;
-}
-
-.stat-card__unit {
-    font-size: 12px;
-    color: var(--color-text-secondary);
-    font-weight: 500;
-}
-
-/* Responsive */
-@media (max-width: 1200px) {
-    .crypto-sidebar {
-        display: none;
-    }
+    font-size: 0.8rem;
 }

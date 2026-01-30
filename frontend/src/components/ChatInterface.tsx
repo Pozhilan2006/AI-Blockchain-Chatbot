@@ -7,9 +7,7 @@ import { TransactionHistory } from './TransactionHistory';
 import { CryptoSidebar } from './CryptoSidebar';
 import { getChainById } from '../config/chains';
 import { formatAddress } from '../utils/ethereum';
-import '../styles/chat-interface.css';
-import '../styles/crypto-sidebar.css';
-import '../styles/message-bubbles.css';
+import { Paperclip, Send, Bot, User } from 'lucide-react';
 
 interface ChatInterfaceProps {
     address: string;
@@ -159,42 +157,58 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ address, chainId, 
     }
 
     return (
-        <div className="chat-interface">
-            <div className="chat-interface__main">
+        <div className="flex h-screen w-full bg-brand-black overflow-hidden font-sans text-brand-text">
+            {/* Main Chat Area */}
+            <div className="flex-1 flex flex-col min-w-0 relative">
+
                 {/* Header */}
-                <header className="chat-interface__header">
-                    <div className="header__left">
-                        <div className="header__logo">
-                            🤖
+                <header className="flex-shrink-0 h-16 flex items-center justify-between px-6 border-b border-white/10 bg-brand-black/95 backdrop-blur-sm z-10">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
+                            <Bot className="w-5 h-5 text-brand-orange" />
                         </div>
-                        <h1 className="header__title">AI Web3 Assistant</h1>
+                        <div>
+                            <h1 className="text-base font-bold text-white tracking-tight">AI Web3 Assistant</h1>
+                            <div className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                <span className="text-xs text-brand-textMuted uppercase tracking-wider">Connected</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="header__right">
-                        <div className="status-indicator">
-                            <span className="status-indicator__dot"></span>
-                            <span className="status-indicator__text">Connected</span>
-                        </div>
-
-                        <div className="wallet-address" title="Click to copy">
+                    <div className="flex items-center gap-4">
+                        <div className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-brand-textMuted font-mono">
                             {formatAddress(address)}
                         </div>
                     </div>
                 </header>
 
-                {/* Messages Area */}
-                <main className="chat-interface__messages">
-                    <div className="messages__container">
+                {/* Messages Container */}
+                <main className="flex-1 overflow-y-auto px-4 py-6 scroll-smooth">
+                    <div className="max-w-3xl mx-auto flex flex-col gap-6">
                         {messages.map((message) => (
                             <div
                                 key={message.id}
-                                className={`message message--${message.role === 'user' ? 'user' : 'ai'}`}
+                                className={`flex gap-4 max-w-[85%] ${message.role === 'user' ? 'self-end flex-row-reverse' : 'self-start'}`}
                             >
-                                <div className="message__avatar">
-                                    {message.role === 'user' ? getInitials(address) : '🤖'}
+                                {/* Avatar */}
+                                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border ${message.role === 'user'
+                                        ? 'bg-brand-gray border-white/10'
+                                        : 'bg-white/5 border-white/10'
+                                    }`}>
+                                    {message.role === 'user' ? (
+                                        <User className="w-4 h-4 text-gray-400" />
+                                    ) : (
+                                        <Bot className="w-5 h-5 text-brand-orange" />
+                                    )}
                                 </div>
-                                <div className="message__content">
-                                    <div className="message__text">
+
+                                {/* Content */}
+                                <div className="flex flex-col gap-1 min-w-0">
+                                    <div className={`px-5 py-3 rounded-2xl text-sm leading-relaxed ${message.role === 'user'
+                                            ? 'bg-brand-orange text-white rounded-tr-sm shadow-[0_4px_20px_rgba(255,77,0,0.2)]'
+                                            : 'bg-white/5 border border-white/5 text-gray-200 rounded-tl-sm'
+                                        }`}>
                                         {message.content.split('\n').map((line, i) => (
                                             <React.Fragment key={i}>
                                                 {line}
@@ -202,168 +216,97 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ address, chainId, 
                                             </React.Fragment>
                                         ))}
                                     </div>
-                                    <div className="message__timestamp">
+                                    <span className={`text-[10px] text-gray-600 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                                         {formatTime(message.timestamp)}
-                                    </div>
+                                    </span>
                                 </div>
                             </div>
                         ))}
 
                         {isProcessing && (
-                            <div className="typing-indicator">
-                                <div className="typing-indicator__avatar">
-                                    🤖
+                            <div className="flex gap-4 max-w-[85%] self-start">
+                                <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                                    <Bot className="w-5 h-5 text-brand-orange" />
                                 </div>
-                                <div className="typing-indicator__content">
-                                    <span className="typing-indicator__dot"></span>
-                                    <span className="typing-indicator__dot"></span>
-                                    <span className="typing-indicator__dot"></span>
+                                <div className="px-5 py-4 rounded-2xl rounded-tl-sm bg-white/5 border border-white/5 flex gap-1 items-center">
+                                    <span className="w-1.5 h-1.5 bg-brand-orange rounded-full animate-bounce [animation-delay:-0.32s]"></span>
+                                    <span className="w-1.5 h-1.5 bg-brand-orange rounded-full animate-bounce [animation-delay:-0.16s]"></span>
+                                    <span className="w-1.5 h-1.5 bg-brand-orange rounded-full animate-bounce"></span>
                                 </div>
                             </div>
                         )}
-
                         <div ref={messagesEndRef} />
                     </div>
                 </main>
 
-                {/* Input Bar */}
-                <footer className="chat-interface__input-bar">
-                    <button className="input-bar__attach" aria-label="Attach file" title="Attach file">
-                        📎
-                    </button>
-
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        placeholder="Type your message here..."
-                        className="input-bar__field"
-                        disabled={isProcessing}
-                        aria-label="Type your message"
-                    />
-
-                    <button
-                        onClick={handleSend}
-                        disabled={isProcessing || !input.trim()}
-                        className="input-bar__send"
-                        aria-label="Send message"
-                    >
-                        🚀
-                    </button>
-                </footer>
-
-                {/* Transaction Preview Modal (Overlay) */}
-                {showTransactionPreview && currentIntent && (
-                    <div style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.7)',
-                        backdropFilter: 'blur(8px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000,
-                        padding: '20px'
-                    }}>
-                        <TransactionPreview
-                            intent={currentIntent}
-                            address={address}
-                            chainId={chainId}
-                            onComplete={handleTransactionComplete}
-                            onCancel={handleTransactionCancel}
-                        />
-                    </div>
-                )}
-
-                {/* Balance Display (Overlay) */}
-                {showBalance && (
-                    <div style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.7)',
-                        backdropFilter: 'blur(8px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000,
-                        padding: '20px'
-                    }}>
-                        <div style={{ position: 'relative', maxWidth: '500px', width: '100%' }}>
-                            <button
-                                onClick={() => setShowBalance(false)}
-                                style={{
-                                    position: 'absolute',
-                                    top: '-10px',
-                                    right: '-10px',
-                                    background: '#F6851B',
-                                    border: 'none',
-                                    borderRadius: '50%',
-                                    width: '32px',
-                                    height: '32px',
-                                    color: 'white',
-                                    cursor: 'pointer',
-                                    fontSize: '18px',
-                                    zIndex: 1001
-                                }}
-                            >
-                                ×
+                {/* Input Area (Sticky Bottom) */}
+                <div className="flex-shrink-0 p-6 pt-2 bg-gradient-to-t from-brand-black via-brand-black to-transparent z-10">
+                    <div className="max-w-3xl mx-auto relative">
+                        <div className="flex items-center gap-2 p-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl transition-all focus-within:bg-white/10 focus-within:border-white/20">
+                            <button className="p-3 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-colors" title="Attach">
+                                <Paperclip className="w-5 h-5" />
                             </button>
-                            <BalanceDisplay address={address} chainId={chainId} />
+
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyPress={handleKeyPress}
+                                placeholder="Ask about crypto prices, transfers, or swaps..."
+                                className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 text-sm px-2"
+                                disabled={isProcessing}
+                            />
+
+                            <button
+                                onClick={handleSend}
+                                disabled={isProcessing || !input.trim()}
+                                className="p-3 rounded-full bg-brand-orange text-white shadow-lg hover:bg-brand-orangeHover disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95"
+                            >
+                                <Send className="w-4 h-4 ml-0.5" />
+                            </button>
+                        </div>
+                        <div className="text-center mt-2">
+                            <span className="text-[10px] text-gray-600">AI can make mistakes. Verify important transactions.</span>
                         </div>
                     </div>
-                )}
+                </div>
 
-                {/* Transaction History (Overlay) */}
-                {showHistory && (
-                    <div style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.7)',
-                        backdropFilter: 'blur(8px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000,
-                        padding: '20px'
-                    }}>
-                        <div style={{ position: 'relative', maxWidth: '600px', width: '100%', maxHeight: '80vh', overflow: 'auto' }}>
+                {/* Overlays (Balance, History, etc.) */}
+                {(showTransactionPreview || showBalance || showHistory) && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="relative w-full max-w-lg">
                             <button
-                                onClick={() => setShowHistory(false)}
-                                style={{
-                                    position: 'absolute',
-                                    top: '-10px',
-                                    right: '-10px',
-                                    background: '#F6851B',
-                                    border: 'none',
-                                    borderRadius: '50%',
-                                    width: '32px',
-                                    height: '32px',
-                                    color: 'white',
-                                    cursor: 'pointer',
-                                    fontSize: '18px',
-                                    zIndex: 1001
+                                onClick={() => {
+                                    setShowTransactionPreview(false);
+                                    setShowBalance(false);
+                                    setShowHistory(false);
+                                    setCurrentIntent(null);
                                 }}
+                                className="absolute -top-12 right-0 p-2 text-white/50 hover:text-white"
                             >
-                                ×
+                                Close
                             </button>
-                            <TransactionHistory address={address} chainId={chainId} />
+
+                            {showTransactionPreview && currentIntent && (
+                                <TransactionPreview
+                                    intent={currentIntent}
+                                    address={address}
+                                    chainId={chainId}
+                                    onComplete={handleTransactionComplete}
+                                    onCancel={handleTransactionCancel}
+                                />
+                            )}
+                            {showBalance && <BalanceDisplay address={address} chainId={chainId} />}
+                            {showHistory && <TransactionHistory address={address} chainId={chainId} />}
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* Crypto Sidebar */}
-            <CryptoSidebar currentChainId={chainId} />
+            {/* Right Sidebar */}
+            <div className="hidden lg:block w-[320px] flex-shrink-0 border-l border-white/5 bg-black/20 backdrop-blur-md">
+                <CryptoSidebar currentChainId={chainId} />
+            </div>
         </div>
     );
 };

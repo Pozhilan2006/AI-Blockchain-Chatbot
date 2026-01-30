@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../styles/crypto-sidebar.css';
+import { Activity, BarChart3, Box, Zap } from 'lucide-react';
 
 interface CryptoPrice {
     symbol: string;
@@ -20,10 +20,9 @@ export const CryptoSidebar: React.FC<{ currentChainId: number }> = ({ currentCha
     const [prices, setPrices] = useState<CryptoPrice[]>([
         { symbol: 'ETH', name: 'Ethereum', price: 2250.45, change24h: 2.34, icon: '⟠' },
         { symbol: 'BTC', name: 'Bitcoin', price: 43250.00, change24h: -1.23, icon: '₿' },
+        { symbol: 'SOL', name: 'Solana', price: 98.45, change24h: 8.12, icon: '◎' },
         { symbol: 'MATIC', name: 'Polygon', price: 0.89, change24h: 5.67, icon: '◆' },
         { symbol: 'BNB', name: 'BNB', price: 315.20, change24h: 1.45, icon: '◉' },
-        { symbol: 'USDC', name: 'USD Coin', price: 1.00, change24h: 0.01, icon: '$' },
-        { symbol: 'USDT', name: 'Tether', price: 1.00, change24h: -0.02, icon: '₮' },
     ]);
 
     const networks: Network[] = [
@@ -42,80 +41,58 @@ export const CryptoSidebar: React.FC<{ currentChainId: number }> = ({ currentCha
                 price: coin.price * (1 + (Math.random() - 0.5) * 0.002),
                 change24h: coin.change24h + (Math.random() - 0.5) * 0.1,
             })));
-        }, 3000); // Update every 3 seconds
-
+        }, 3000);
         return () => clearInterval(interval);
     }, []);
 
-    function formatPrice(price: number, symbol: string): string {
-        if (symbol === 'USDC' || symbol === 'USDT') {
-            return price.toFixed(4);
-        }
-        if (price < 1) {
-            return price.toFixed(4);
-        }
-        if (price < 100) {
-            return price.toFixed(2);
-        }
+    function formatPrice(price: number): string {
         return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     return (
-        <div className="crypto-sidebar">
-            {/* Network Status */}
-            <div className="sidebar-section">
-                <h3 className="sidebar-section__title">Network</h3>
-                <div className="network-card" style={{ borderColor: currentNetwork.color }}>
-                    <div className="network-card__icon" style={{ background: currentNetwork.color }}>
-                        {currentNetwork.icon}
-                    </div>
-                    <div className="network-card__info">
-                        <div className="network-card__name">{currentNetwork.name}</div>
-                        <div className="network-card__status">
-                            <span className="status-dot"></span>
-                            Active
-                        </div>
-                    </div>
-                </div>
-
-                {/* Other Networks */}
-                <div className="network-list">
-                    {networks.filter(n => n.chainId !== currentChainId).map(network => (
-                        <div key={network.chainId} className="network-item">
-                            <div className="network-item__icon" style={{ background: network.color }}>
-                                {network.icon}
-                            </div>
-                            <span className="network-item__name">{network.name}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Live Prices */}
-            <div className="sidebar-section">
-                <h3 className="sidebar-section__title">
-                    Live Prices
-                    <span className="live-indicator">
-                        <span className="live-dot"></span>
-                        LIVE
-                    </span>
+        <div className="h-full flex flex-col p-6 overflow-y-auto custom-scrollbar">
+            {/* Status Section */}
+            <div className="mb-8">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Activity size={14} /> Network Status
                 </h3>
-                <div className="price-list">
+                <div className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-white/10 transition-colors">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-inner" style={{ background: `${currentNetwork.color}20`, color: currentNetwork.color }}>
+                            {currentNetwork.icon}
+                        </div>
+                        <div>
+                            <div className="font-bold text-sm text-gray-200">{currentNetwork.name}</div>
+                            <div className="flex items-center gap-1.5 text-xs text-green-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]"></span>
+                                Operational
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Market Prices */}
+            <div className="flex-1">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <BarChart3 size={14} /> Live Market
+                </h3>
+                <div className="space-y-2">
                     {prices.map(coin => (
-                        <div key={coin.symbol} className="price-card">
-                            <div className="price-card__header">
-                                <div className="price-card__icon">{coin.icon}</div>
-                                <div className="price-card__info">
-                                    <div className="price-card__symbol">{coin.symbol}</div>
-                                    <div className="price-card__name">{coin.name}</div>
+                        <div key={coin.symbol} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors cursor-default group">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 text-xs border border-white/5 group-hover:border-white/20 transition-colors">
+                                    {coin.icon}
+                                </div>
+                                <div>
+                                    <div className="font-bold text-sm text-gray-200">{coin.symbol}</div>
+                                    <div className="text-[10px] text-gray-500">{coin.name}</div>
                                 </div>
                             </div>
-                            <div className="price-card__data">
-                                <div className="price-card__price">
-                                    ${formatPrice(coin.price, coin.symbol)}
-                                </div>
-                                <div className={`price-card__change ${coin.change24h >= 0 ? 'positive' : 'negative'}`}>
-                                    {coin.change24h >= 0 ? '↑' : '↓'} {Math.abs(coin.change24h).toFixed(2)}%
+                            <div className="text-right">
+                                <div className="font-mono text-sm text-gray-300">${formatPrice(coin.price)}</div>
+                                <div className={`text-[10px] font-medium ${coin.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                    {coin.change24h >= 0 ? '+' : ''}{coin.change24h.toFixed(2)}%
                                 </div>
                             </div>
                         </div>
@@ -123,20 +100,24 @@ export const CryptoSidebar: React.FC<{ currentChainId: number }> = ({ currentCha
                 </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="sidebar-section">
-                <h3 className="sidebar-section__title">Market Stats</h3>
-                <div className="stats-grid">
-                    <div className="stat-card">
-                        <div className="stat-card__label">Gas Price</div>
-                        <div className="stat-card__value">
-                            {(15 + Math.random() * 10).toFixed(0)} <span className="stat-card__unit">gwei</span>
+            {/* Quick Stats Grid */}
+            <div className="mt-8 pt-8 border-t border-white/5">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Chain Stats</h3>
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                        <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
+                            <Zap size={12} /> Gas (Gwei)
+                        </div>
+                        <div className="text-lg font-mono font-bold text-white">
+                            {(15 + Math.random() * 10).toFixed(0)}
                         </div>
                     </div>
-                    <div className="stat-card">
-                        <div className="stat-card__label">Block</div>
-                        <div className="stat-card__value">
-                            {(18500000 + Math.floor(Math.random() * 1000)).toLocaleString()}
+                    <div className="p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                        <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
+                            <Box size={12} /> Block
+                        </div>
+                        <div className="text-sm font-mono font-bold text-white truncate">
+                            18.5M
                         </div>
                     </div>
                 </div>
