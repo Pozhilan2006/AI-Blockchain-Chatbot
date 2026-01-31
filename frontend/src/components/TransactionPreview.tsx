@@ -12,6 +12,7 @@ import {
     getTokenMetadata,
 } from '../utils/ethereum';
 import { getTokenAddress, getChainById } from '../config/chains';
+import { ArrowRight, Lock, Loader2, Check, AlertCircle } from 'lucide-react';
 
 interface TransactionPreviewProps {
     intent: Intent;
@@ -28,18 +29,13 @@ export const TransactionPreview: React.FC<TransactionPreviewProps> = ({
     onComplete,
     onCancel,
 }) => {
-    const [confirmText, setConfirmText] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState('');
-    const [txHash, setTxHash] = useState('');
     const [status, setStatus] = useState<'preview' | 'confirming' | 'pending' | 'success' | 'failed'>('preview');
 
-    async function handleConfirm() {
-        if (confirmText.toUpperCase() !== 'CONFIRM') {
-            setError('Please type CONFIRM to proceed');
-            return;
-        }
+    const chain = getChainById(chainId);
 
+    async function handleExecute() {
         setIsProcessing(true);
         setError('');
         setStatus('confirming');
@@ -50,111 +46,56 @@ export const TransactionPreview: React.FC<TransactionPreviewProps> = ({
             // Prepare transaction based on intent type
             switch (intent.intent) {
                 case 'TRANSFER_ETH':
-                    tx = await prepareEthTransfer(
-                        intent.params.recipient,
-                        intent.params.amount,
-                        chainId
-                    );
+                    tx = await prepareEthTransfer(intent.params.recipient, intent.params.amount, chainId);
                     break;
-
                 case 'TRANSFER_TOKEN':
                     const tokenAddress = getTokenAddress(intent.params.token, chainId);
-                    if (!tokenAddress) {
-                        throw new Error('Token not found');
-                    }
+                    if (!tokenAddress) throw new Error('Token not found');
                     const metadata = await getTokenMetadata(tokenAddress);
-                    tx = await prepareERC20Transfer(
-                        tokenAddress,
-                        intent.params.recipient,
-                        intent.params.amount,
-                        metadata.decimals,
-                        chainId
-                    );
+                    tx = await prepareERC20Transfer(tokenAddress, intent.params.recipient, intent.params.amount, metadata.decimals, chainId);
                     break;
-
                 case 'SWAP_TOKENS':
                     const tokenInAddr = getTokenAddress(intent.params.tokenIn, chainId);
                     const tokenOutAddr = getTokenAddress(intent.params.tokenOut, chainId);
-                    if (!tokenInAddr || !tokenOutAddr) {
-                        throw new Error('Token not found');
-                    }
+                    if (!tokenInAddr || !tokenOutAddr) throw new Error('Token not found');
                     const tokenInMeta = await getTokenMetadata(tokenInAddr);
-                    const swapTxs = await prepareSwap(
-                        tokenInAddr,
-                        tokenOutAddr,
-                        intent.params.amountIn,
-                        tokenInMeta.decimals,
-                        intent.params.slippage || 0.5,
-                        chainId
-                    );
-
-                    // If approval needed, send approval first
+                    const swapTxs = await prepareSwap(tokenInAddr, tokenOutAddr, intent.params.amountIn, tokenInMeta.decimals, intent.params.slippage || 0.5, chainId);
                     if (swapTxs.approvalTx) {
                         setStatus('confirming');
                         const approvalHash = await sendTransaction(swapTxs.approvalTx);
                         setStatus('pending');
                         await monitorTransaction(approvalHash);
                     }
-
                     tx = swapTxs.swapTx;
                     break;
-
                 case 'BUY_TOKEN':
                     const buyTokenAddr = getTokenAddress(intent.params.token, chainId);
-                    if (!buyTokenAddr) {
-                        throw new Error('Token not found');
-                    }
-                    tx = await prepareBuyToken(
-                        buyTokenAddr,
-                        intent.params.amount,
-                        intent.params.slippage || 0.5,
-                        chainId
-                    );
+                    if (!buyTokenAddr) throw new Error('Token not found');
+                    tx = await prepareBuyToken(buyTokenAddr, intent.params.amount, intent.params.slippage || 0.5, chainId);
                     break;
-
                 case 'SELL_TOKEN':
                     const sellTokenAddr = getTokenAddress(intent.params.token, chainId);
-                    if (!sellTokenAddr) {
-                        throw new Error('Token not found');
-                    }
+                    if (!sellTokenAddr) throw new Error('Token not found');
                     const sellTokenMeta = await getTokenMetadata(sellTokenAddr);
-                    const sellTxs = await prepareSellToken(
-                        sellTokenAddr,
-                        intent.params.amount,
-                        sellTokenMeta.decimals,
-                        intent.params.slippage || 0.5,
-                        chainId
-                    );
-
-                    // If approval needed, send approval first
+                    const sellTxs = await prepareSellToken(sellTokenAddr, intent.params.amount, sellTokenMeta.decimals, intent.params.slippage || 0.5, chainId);
                     if (sellTxs.approvalTx) {
                         setStatus('confirming');
                         const approvalHash = await sendTransaction(sellTxs.approvalTx);
                         setStatus('pending');
                         await monitorTransaction(approvalHash);
                     }
-
                     tx = sellTxs.swapTx;
                     break;
-
                 case 'TRANSFER_NFT':
-                    tx = await prepareNFTTransfer(
-                        intent.params.contractAddress,
-                        address,
-                        intent.params.recipient,
-                        intent.params.tokenId,
-                        chainId
-                    );
+                    tx = await prepareNFTTransfer(intent.params.contractAddress, address, intent.params.recipient, intent.params.tokenId, chainId);
                     break;
-
                 default:
-                    throw new Error('Unsupported transaction type');
+                    throw new Error(`Transaction type ${intent.intent} not supported`);
             }
 
             // Send transaction
             setStatus('confirming');
-            const hash = await sendTransaction(tx);
-            setTxHash(hash);
+            const hash = await sendTransaction(tx!);
             setStatus('pending');
 
             // Monitor transaction
@@ -162,10 +103,10 @@ export const TransactionPreview: React.FC<TransactionPreviewProps> = ({
 
             if (receipt.status === 1) {
                 setStatus('success');
-                setTimeout(() => onComplete(hash), 2000);
+                setTimeout(() => onComplete(hash), 1500);
             } else {
                 setStatus('failed');
-                setError('Transaction failed');
+                setError('Transaction reverted on-chain');
             }
         } catch (err: any) {
             console.error('Transaction error:', err);
@@ -176,149 +117,122 @@ export const TransactionPreview: React.FC<TransactionPreviewProps> = ({
         }
     }
 
-    const chain = getChainById(chainId);
+    if (status !== 'preview') {
+        return (
+            <div className="w-full bg-[#121212] border border-[#222] rounded-2xl p-8 flex flex-col items-center justify-center min-h-[300px] animate-fade-in-up">
+                {status === 'confirming' && (
+                    <>
+                        <div className="w-12 h-12 rounded-full border-4 border-[#222] border-t-primary animate-spin mb-6" />
+                        <h3 className="text-xl font-medium text-white mb-2">Signature Required</h3>
+                        <p className="text-text-muted text-sm">Please confirm in your wallet</p>
+                    </>
+                )}
+                {status === 'pending' && (
+                    <>
+                        <div className="w-16 h-1 bg-[#222] rounded-full overflow-hidden mb-6">
+                            <div className="h-full bg-primary w-1/2 animate-[shimmer_1.5s_infinite]" />
+                        </div>
+                        <h3 className="text-xl font-medium text-white mb-2">Broadcasting...</h3>
+                        <p className="text-text-muted text-sm">Waiting for block confirmation</p>
+                    </>
+                )}
+                {status === 'failed' && (
+                    <>
+                        <div className="w-12 h-12 bg-red-900/20 rounded-full flex items-center justify-center text-red-500 mb-6">
+                            <AlertCircle size={24} />
+                        </div>
+                        <h3 className="text-xl font-medium text-white mb-2">Transaction Failed</h3>
+                        <p className="text-red-400 text-sm mb-6">{error}</p>
+                        <button onClick={onCancel} className="text-text-muted hover:text-white text-sm underline">Dismiss</button>
+                    </>
+                )}
+                {status === 'success' && (
+                    <>
+                        <div className="w-12 h-12 bg-green-900/20 rounded-full flex items-center justify-center text-green-500 mb-6">
+                            <Check size={24} />
+                        </div>
+                        <h3 className="text-xl font-medium text-white mb-2">Success</h3>
+                        <p className="text-text-muted text-sm">Transaction confirmed</p>
+                    </>
+                )}
+            </div>
+        )
+    }
 
     return (
-        <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 shadow-2xl p-6">
-            <h3 className="text-xl font-bold text-white mb-4">Transaction Preview</h3>
+        <div className="w-full bg-[#121212] border border-[#222] rounded-3xl overflow-hidden shadow-2xl animate-fade-in-up">
+            {/* Ambient Header Gradient */}
+            <div className="h-2 w-full bg-gradient-to-r from-primary to-orange-600 opacity-80" />
 
-            {status === 'preview' && (
-                <>
-                    <div className="space-y-3 mb-6">
-                        <div className="flex justify-between">
-                            <span className="text-gray-400">Action:</span>
-                            <span className="text-white font-semibold">{intent.intent.replace(/_/g, ' ')}</span>
+            <div className="p-8">
+                <div className="flex justify-between items-start mb-8">
+                    <div>
+                        <h3 className="text-2xl font-semibold text-white tracking-tight mb-1">
+                            {intent.intent === 'SWAP_TOKENS' ? 'Swap Assets' :
+                                intent.intent === 'TRANSFER_ETH' ? 'Transfer Funds' :
+                                    'Execution Plan'}
+                        </h3>
+                        <p className="text-text-muted text-sm">Review transaction details before signing.</p>
+                    </div>
+                    <div className="px-3 py-1 bg-[#1A1A1A] rounded-full border border-[#333] text-[10px] font-bold tracking-widest text-text-muted uppercase">
+                        {chain?.name || 'Unknown Chain'}
+                    </div>
+                </div>
+
+                {/* Main Visual Intent */}
+                <div className="flex items-center justify-between mb-10 px-4">
+                    <div className="flex-1">
+                        <div className="text-sm text-text-muted font-medium mb-1 uppercase tracking-wider">Send</div>
+                        <div className="text-3xl font-medium text-white">
+                            {intent.params.amount || intent.params.amountIn} <span className="text-text-dim text-lg">{intent.params.token || intent.params.tokenIn || 'ETH'}</span>
                         </div>
-
-                        {intent.params.amount && (
-                            <div className="flex justify-between">
-                                <span className="text-gray-400">Amount:</span>
-                                <span className="text-white font-semibold">{intent.params.amount} {intent.params.token || chain?.nativeCurrency.symbol}</span>
-                            </div>
-                        )}
-
-                        {intent.params.recipient && (
-                            <div className="flex justify-between">
-                                <span className="text-gray-400">Recipient:</span>
-                                <span className="text-white font-mono text-sm">{intent.params.recipient.slice(0, 10)}...{intent.params.recipient.slice(-8)}</span>
-                            </div>
-                        )}
-
-                        {intent.params.tokenIn && intent.params.tokenOut && (
-                            <>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-400">From:</span>
-                                    <span className="text-white font-semibold">{intent.params.tokenIn}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-400">To:</span>
-                                    <span className="text-white font-semibold">{intent.params.tokenOut}</span>
-                                </div>
-                            </>
-                        )}
-
-                        <div className="flex justify-between">
-                            <span className="text-gray-400">Chain:</span>
-                            <span className="text-white">{chain?.name}</span>
-                        </div>
-
-                        {intent.params.slippage && (
-                            <div className="flex justify-between">
-                                <span className="text-gray-400">Slippage Tolerance:</span>
-                                <span className="text-white">{intent.params.slippage}%</span>
-                            </div>
-                        )}
                     </div>
 
-                    {error && (
-                        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3 mb-4">
-                            <p className="text-red-200 text-sm">{error}</p>
+                    {(intent.params.tokenOut || intent.params.recipient) && (
+                        <div className="flex items-center justify-center px-6">
+                            <div className="w-10 h-10 rounded-full bg-[#1A1A1A] flex items-center justify-center text-text-muted border border-[#333]">
+                                <ArrowRight size={18} />
+                            </div>
                         </div>
                     )}
 
-                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-4">
-                        <p className="text-yellow-200 text-sm font-medium mb-2">⚠️ Confirmation Required</p>
-                        <p className="text-yellow-300 text-xs">
-                            Type <strong>CONFIRM</strong> below to proceed with this transaction. This action cannot be undone.
-                        </p>
-                    </div>
+                    {(intent.params.tokenOut || intent.params.recipient) && (
+                        <div className="flex-1 text-right">
+                            <div className="text-sm text-text-muted font-medium mb-1 uppercase tracking-wider">Receive</div>
+                            {intent.params.tokenOut ? (
+                                <div className="text-3xl font-medium text-white">
+                                    <span className="text-sm text-text-dim">Est. </span>
+                                    {/* Placeholder for estimated out, usually from quote */}
+                                    ~ <span className="text-text-dim text-lg">{intent.params.tokenOut}</span>
+                                </div>
+                            ) : (
+                                <div className="text-lg font-medium text-white truncate max-w-[150px] ml-auto">
+                                    {intent.params.recipient.slice(0, 6)}...{intent.params.recipient.slice(-4)}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
 
-                    <input
-                        type="text"
-                        value={confirmText}
-                        onChange={(e) => setConfirmText(e.target.value)}
-                        placeholder="Type CONFIRM"
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                {/* Footer Actions */}
+                <div className="flex items-center gap-4 pt-6 border-t border-[#222]">
+                    <button
+                        onClick={handleExecute}
                         disabled={isProcessing}
-                    />
-
-                    <div className="flex space-x-3">
-                        <button
-                            onClick={handleConfirm}
-                            disabled={isProcessing || confirmText.toUpperCase() !== 'CONFIRM'}
-                            className="flex-1 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold px-6 py-3 rounded-lg transition-all disabled:cursor-not-allowed"
-                        >
-                            {isProcessing ? 'Processing...' : 'Confirm Transaction'}
-                        </button>
-                        <button
-                            onClick={onCancel}
-                            disabled={isProcessing}
-                            className="px-6 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-colors disabled:opacity-50"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </>
-            )}
-
-            {status === 'confirming' && (
-                <div className="text-center py-8">
-                    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-white font-semibold mb-2">Waiting for confirmation...</p>
-                    <p className="text-gray-400 text-sm">Please confirm the transaction in MetaMask</p>
-                </div>
-            )}
-
-            {status === 'pending' && (
-                <div className="text-center py-8">
-                    <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-white font-semibold mb-2">Transaction Pending...</p>
-                    <p className="text-gray-400 text-sm">Waiting for blockchain confirmation</p>
-                    {txHash && (
-                        <p className="text-blue-400 text-xs mt-2 font-mono">{txHash.slice(0, 20)}...</p>
-                    )}
-                </div>
-            )}
-
-            {status === 'success' && (
-                <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                    </div>
-                    <p className="text-white font-semibold mb-2">Transaction Successful!</p>
-                    <p className="text-gray-400 text-sm">Your transaction has been confirmed</p>
-                </div>
-            )}
-
-            {status === 'failed' && (
-                <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </div>
-                    <p className="text-white font-semibold mb-2">Transaction Failed</p>
-                    <p className="text-red-400 text-sm">{error}</p>
+                        className="flex-1 bg-white text-black h-14 rounded-xl font-semibold text-base hover:bg-gray-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                        {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Lock size={18} />}
+                        Confirm & Sign
+                    </button>
                     <button
                         onClick={onCancel}
-                        className="mt-4 px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                        disabled={isProcessing}
+                        className="px-6 h-14 rounded-xl font-medium text-text-muted hover:text-white hover:bg-[#1A1A1A] transition-colors"
                     >
-                        Close
+                        Cancel
                     </button>
                 </div>
-            )}
+            </div>
         </div>
     );
 };

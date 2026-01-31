@@ -33,7 +33,6 @@ export const CryptoSidebar: React.FC<{ currentChainId: number }> = ({ currentCha
 
     const currentNetwork = networks.find(n => n.chainId === currentChainId) || networks[0];
 
-    // Simulate live price updates
     useEffect(() => {
         const interval = setInterval(() => {
             setPrices(prev => prev.map(coin => ({
@@ -50,21 +49,21 @@ export const CryptoSidebar: React.FC<{ currentChainId: number }> = ({ currentCha
     }
 
     return (
-        <div className="h-full flex flex-col p-6 overflow-y-auto custom-scrollbar">
+        <div className="h-full flex flex-col p-6 overflow-y-auto">
             {/* Status Section */}
             <div className="mb-8">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <Activity size={14} /> Network Status
+                <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Activity size={12} /> Network Status
                 </h3>
-                <div className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-white/10 transition-colors">
+                <div className="p-4 rounded bg-bg-main border border-bg-border flex items-center justify-between group hover:border-primary/20 transition-colors">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-inner" style={{ background: `${currentNetwork.color}20`, color: currentNetwork.color }}>
+                        <div className="w-8 h-8 rounded flex items-center justify-center text-sm border border-bg-border" style={{ background: `${currentNetwork.color}10`, color: currentNetwork.color, borderColor: `${currentNetwork.color}30` }}>
                             {currentNetwork.icon}
                         </div>
                         <div>
-                            <div className="font-bold text-sm text-gray-200">{currentNetwork.name}</div>
-                            <div className="flex items-center gap-1.5 text-xs text-green-400">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]"></span>
+                            <div className="font-bold text-xs text-text-main uppercase tracking-wider">{currentNetwork.name}</div>
+                            <div className="flex items-center gap-1.5 text-[10px] text-green-500 font-mono mt-0.5">
+                                <span className="w-1 h-1 rounded-full bg-green-500"></span>
                                 Operational
                             </div>
                         </div>
@@ -74,24 +73,24 @@ export const CryptoSidebar: React.FC<{ currentChainId: number }> = ({ currentCha
 
             {/* Market Prices */}
             <div className="flex-1">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <BarChart3 size={14} /> Live Market
+                <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <BarChart3 size={12} /> Live Market
                 </h3>
-                <div className="space-y-2">
+                <div className="space-y-1">
                     {prices.map(coin => (
-                        <div key={coin.symbol} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors cursor-default group">
+                        <div key={coin.symbol} className="flex items-center justify-between p-3 rounded hover:bg-bg-main transition-colors cursor-default group border border-transparent hover:border-bg-border">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 text-xs border border-white/5 group-hover:border-white/20 transition-colors">
+                                <div className="w-6 h-6 rounded flex items-center justify-center text-text-muted text-[10px] bg-bg-main border border-bg-border">
                                     {coin.icon}
                                 </div>
                                 <div>
-                                    <div className="font-bold text-sm text-gray-200">{coin.symbol}</div>
-                                    <div className="text-[10px] text-gray-500">{coin.name}</div>
+                                    <div className="font-bold text-xs text-text-main">{coin.symbol}</div>
+                                    <div className="text-[10px] text-text-dim">{coin.name}</div>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <div className="font-mono text-sm text-gray-300">${formatPrice(coin.price)}</div>
-                                <div className={`text-[10px] font-medium ${coin.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                <div className="font-mono text-xs text-text-main">${formatPrice(coin.price)}</div>
+                                <div className={`text-[10px] font-medium ${coin.change24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                                     {coin.change24h >= 0 ? '+' : ''}{coin.change24h.toFixed(2)}%
                                 </div>
                             </div>
@@ -101,22 +100,22 @@ export const CryptoSidebar: React.FC<{ currentChainId: number }> = ({ currentCha
             </div>
 
             {/* Quick Stats Grid */}
-            <div className="mt-8 pt-8 border-t border-white/5">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Chain Stats</h3>
+            <div className="mt-8 pt-8 border-t border-bg-border">
+                <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-4">Chain Stats</h3>
                 <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                        <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
-                            <Zap size={12} /> Gas (Gwei)
+                    <div className="p-3 rounded bg-bg-main border border-bg-border hover:border-text-dim transition-colors">
+                        <div className="flex items-center gap-2 text-text-muted text-[10px] mb-1">
+                            <Zap size={10} /> Gas (Gwei)
                         </div>
-                        <div className="text-lg font-mono font-bold text-white">
+                        <div className="text-sm font-mono font-bold text-text-main">
                             {(15 + Math.random() * 10).toFixed(0)}
                         </div>
                     </div>
-                    <div className="p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                        <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
-                            <Box size={12} /> Block
+                    <div className="p-3 rounded bg-bg-main border border-bg-border hover:border-text-dim transition-colors">
+                        <div className="flex items-center gap-2 text-text-muted text-[10px] mb-1">
+                            <Box size={10} /> Block
                         </div>
-                        <div className="text-sm font-mono font-bold text-white truncate">
+                        <div className="text-xs font-mono font-bold text-text-main truncate">
                             18.5M
                         </div>
                     </div>

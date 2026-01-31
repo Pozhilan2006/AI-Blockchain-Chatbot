@@ -8,7 +8,6 @@ function App() {
     const [address, setAddress] = useState<string>('');
     const [chainId, setChainId] = useState<number>(0);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [authToken, setAuthToken] = useState<string>('');
 
     const [showLanding, setShowLanding] = useState(true);
 
@@ -16,7 +15,6 @@ function App() {
         // Check for existing auth token
         const token = localStorage.getItem('authToken');
         if (token) {
-            setAuthToken(token);
             setIsAuthenticated(true);
             setShowLanding(false); // Skip landing if already logged in
         }
@@ -28,18 +26,16 @@ function App() {
     }
 
     function handleAuthenticated(token: string) {
-        setAuthToken(token);
+        localStorage.setItem('authToken', token);
         setIsAuthenticated(true);
     }
 
     function handleLogout() {
         localStorage.removeItem('authToken');
         setIsAuthenticated(false);
-        setAuthToken('');
         setAddress('');
         setChainId(0);
         setShowLanding(true); // Return to landing on logout
-        // window.location.reload(); // Removed force reload to keep smooth transition potential
     }
 
     function handleGetStarted() {
@@ -66,7 +62,6 @@ function App() {
         <ChatInterface
             address={address}
             chainId={chainId}
-            authToken={authToken}
             onLogout={handleLogout}
         />
     );

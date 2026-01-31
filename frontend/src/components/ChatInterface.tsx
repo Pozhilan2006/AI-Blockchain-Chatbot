@@ -1,308 +1,258 @@
-import React, { useState, useRef, useEffect } from 'react';
-import type { ChatMessage, Intent } from '../types';
-import { parseIntent, generateClarifyingQuestion, validateIntentParams, formatIntentDescription } from '../utils/ai';
+import React, { useState, useEffect, useRef } from 'react';
+import { Send, Sparkles, Command } from 'lucide-react';
+import { processAIRequest } from '../utils/ai';
 import { TransactionPreview } from './TransactionPreview';
-import { BalanceDisplay } from './BalanceDisplay';
 import { TransactionHistory } from './TransactionHistory';
+import { BalanceDisplay } from './BalanceDisplay';
 import { CryptoSidebar } from './CryptoSidebar';
-import { getChainById } from '../config/chains';
-import { formatAddress } from '../utils/ethereum';
-import { Paperclip, Send, Bot, User } from 'lucide-react';
+import type { ChatMessage } from '../types';
 
 interface ChatInterfaceProps {
     address: string;
     chainId: number;
-    authToken: string;
     onLogout: () => void;
 }
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ address, chainId }) => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ address, chainId, onLogout }) => {
     const [messages, setMessages] = useState<ChatMessage[]>([
         {
             id: '1',
             role: 'assistant',
-            content: 'Hello! I\'m your AI Web3 assistant. I can help you send ETH, transfer tokens, swap on DEXs, and manage your NFTs. What would you like to do?',
+            content: "Greetings. I am your Web3 Portfolio Intelligence. How may I assist you with your assets today?",
             timestamp: new Date(),
         },
     ]);
-    const [input, setInput] = useState('');
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [currentIntent, setCurrentIntent] = useState<Intent | null>(null);
-    const [showTransactionPreview, setShowTransactionPreview] = useState(false);
-    const [showBalance, setShowBalance] = useState(false);
-    const [showHistory, setShowHistory] = useState(false);
-
+    const [inputValue, setInputValue] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [activeTransaction, setActiveTransaction] = useState<any>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const chain = getChainById(chainId);
 
     useEffect(() => {
-        scrollToBottom();
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    function scrollToBottom() {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-
     async function handleSend() {
-        if (!input.trim() || isProcessing) return;
+        if (!inputValue.trim() || isLoading) return;
 
-        const userMessage: ChatMessage = {
+        const userMsg: ChatMessage = {
             id: Date.now().toString(),
             role: 'user',
-            content: input,
+            content: inputValue,
             timestamp: new Date(),
         };
 
-        setMessages(prev => [...prev, userMessage]);
-        setInput('');
-        setIsProcessing(true);
+        setMessages(prev => [...prev, userMsg]);
+        setInputValue('');
+        setIsLoading(true);
 
         try {
-            // Parse intent from user message
-            const intent = parseIntent(input, chain?.name.toLowerCase() || 'ethereum');
+            const response = await processAIRequest(inputValue, address, chainId);
 
-            // Handle different intents
-            if (intent.intent === 'UNKNOWN') {
-                addAssistantMessage('I\'m not sure what you want to do. You can ask me to send ETH, transfer tokens, swap tokens, check your balance, or show your transaction history.');
-                setIsProcessing(false);
-                return;
-            }
+            // Artificial delay for "Thinking" feel, makes it feel more "Intelligent" less "Bot"
+            setTimeout(() => {
+                const aiMsg: ChatMessage = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: response.message,
+                    timestamp: new Date(),
+                    intent: response.intent,
+                    transaction: response.transaction,
+                };
+                setMessages(prev => [...prev, aiMsg]);
+                setIsLoading(false);
 
-            // Check for missing parameters
-            if (intent.missingParams.length > 0) {
-                const question = generateClarifyingQuestion(intent);
-                addAssistantMessage(question);
-                setCurrentIntent(intent);
-                setIsProcessing(false);
-                return;
-            }
+                if (response.intent && response.transaction) {
+                    setActiveTransaction({
+                        intent: response.intent,
+                        tx: response.transaction
+                    });
+                }
+            }, 800);
 
-            // Validate parameters
-            const validation = validateIntentParams(intent);
-            if (!validation.valid) {
-                addAssistantMessage(`Error: ${validation.errors.join(', ')}`);
-                setIsProcessing(false);
-                return;
-            }
-
-            // Handle special intents
-            if (intent.intent === 'CHECK_BALANCE') {
-                setShowBalance(true);
-                addAssistantMessage('Here\'s your wallet balance:');
-                setIsProcessing(false);
-                return;
-            }
-
-            if (intent.intent === 'SHOW_ADDRESS') {
-                addAssistantMessage(`Your wallet address is: ${address}\n\nYou can share this address to receive assets.`);
-                setIsProcessing(false);
-                return;
-            }
-
-            if (intent.intent === 'SHOW_HISTORY') {
-                setShowHistory(true);
-                addAssistantMessage('Here\'s your transaction history:');
-                setIsProcessing(false);
-                return;
-            }
-
-            // For transaction intents, show preview
-            setCurrentIntent(intent);
-            setShowTransactionPreview(true);
-            addAssistantMessage(`I'll help you ${formatIntentDescription(intent)}. Please review the transaction details.`);
-
-        } catch (error: any) {
-            console.error('Error processing message:', error);
-            addAssistantMessage(`Error: ${error.message}`);
-        } finally {
-            setIsProcessing(false);
+        } catch (error) {
+            console.error(error);
+            setIsLoading(false);
+            setMessages(prev => [...prev, {
+                id: Date.now().toString(),
+                role: 'assistant',
+                content: "I encountered an issue processing that request. Please try again.",
+                timestamp: new Date(),
+            }]);
         }
     }
 
-    function addAssistantMessage(content: string) {
-        const message: ChatMessage = {
+    function handleTransactionComplete(hash: string) {
+        setActiveTransaction(null);
+        setMessages(prev => [...prev, {
             id: Date.now().toString(),
             role: 'assistant',
-            content,
+            content: `Transaction executed successfully. Hash: ${hash}`,
             timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, message]);
-    }
-
-    function handleKeyPress(e: React.KeyboardEvent) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
-    }
-
-    function handleTransactionComplete(txHash: string) {
-        setShowTransactionPreview(false);
-        setCurrentIntent(null);
-        addAssistantMessage(`Transaction submitted successfully! Hash: ${txHash}`);
-    }
-
-    function handleTransactionCancel() {
-        setShowTransactionPreview(false);
-        setCurrentIntent(null);
-        addAssistantMessage('Transaction cancelled.');
-    }
-
-    function formatTime(date: Date): string {
-        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            status: 'success',
+            txHash: hash
+        }]);
     }
 
     return (
-        <div className="flex h-screen w-full bg-brand-black overflow-hidden font-sans text-brand-text">
-            {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col min-w-0 relative">
+        <div className="flex h-screen w-full bg-bg-main overflow-hidden text-text-main relative selection:bg-primary/20">
 
-                {/* Header */}
-                <header className="flex-shrink-0 h-16 flex items-center justify-between px-6 border-b border-white/10 bg-brand-black/95 backdrop-blur-sm z-10">
+            {/* Ambient Background Glows - Subtler & Centered */}
+            <div className="absolute top-1/2 left-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -translate-x-1/2 -translate-y-1/2 z-0" />
+
+            {/* LEFT SIDEBAR - Context & Navigation */}
+            <div className="w-72 hidden lg:flex flex-col border-r border-bg-border/40 bg-bg-main/95 backdrop-blur-sm z-20 shrink-0">
+                <div className="h-16 flex items-center px-6 border-b border-bg-border/40">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
-                            <Bot className="w-5 h-5 text-brand-orange" />
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                            <Sparkles size={16} />
                         </div>
-                        <div>
-                            <h1 className="text-base font-bold text-white tracking-tight">AI Web3 Assistant</h1>
-                            <div className="flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                <span className="text-xs text-brand-textMuted uppercase tracking-wider">Connected</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <div className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-brand-textMuted font-mono">
-                            {formatAddress(address)}
-                        </div>
-                    </div>
-                </header>
-
-                {/* Messages Container */}
-                <main className="flex-1 overflow-y-auto px-4 py-6 scroll-smooth">
-                    <div className="max-w-3xl mx-auto flex flex-col gap-6">
-                        {messages.map((message) => (
-                            <div
-                                key={message.id}
-                                className={`flex gap-4 max-w-[85%] ${message.role === 'user' ? 'self-end flex-row-reverse' : 'self-start'}`}
-                            >
-                                {/* Avatar */}
-                                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border ${message.role === 'user'
-                                    ? 'bg-brand-gray border-white/10'
-                                    : 'bg-white/5 border-white/10'
-                                    }`}>
-                                    {message.role === 'user' ? (
-                                        <User className="w-4 h-4 text-gray-400" />
-                                    ) : (
-                                        <Bot className="w-5 h-5 text-brand-orange" />
-                                    )}
-                                </div>
-
-                                {/* Content */}
-                                <div className="flex flex-col gap-1 min-w-0">
-                                    <div className={`px-5 py-3 rounded-2xl text-sm leading-relaxed ${message.role === 'user'
-                                        ? 'bg-brand-orange text-white rounded-tr-sm shadow-[0_4px_20px_rgba(255,77,0,0.2)]'
-                                        : 'bg-white/5 border border-white/5 text-gray-200 rounded-tl-sm'
-                                        }`}>
-                                        {message.content.split('\n').map((line, i) => (
-                                            <React.Fragment key={i}>
-                                                {line}
-                                                {i < message.content.split('\n').length - 1 && <br />}
-                                            </React.Fragment>
-                                        ))}
-                                    </div>
-                                    <span className={`text-[10px] text-gray-600 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                                        {formatTime(message.timestamp)}
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
-
-                        {isProcessing && (
-                            <div className="flex gap-4 max-w-[85%] self-start">
-                                <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                                    <Bot className="w-5 h-5 text-brand-orange" />
-                                </div>
-                                <div className="px-5 py-4 rounded-2xl rounded-tl-sm bg-white/5 border border-white/5 flex gap-1 items-center">
-                                    <span className="w-1.5 h-1.5 bg-brand-orange rounded-full animate-bounce [animation-delay:-0.32s]"></span>
-                                    <span className="w-1.5 h-1.5 bg-brand-orange rounded-full animate-bounce [animation-delay:-0.16s]"></span>
-                                    <span className="w-1.5 h-1.5 bg-brand-orange rounded-full animate-bounce"></span>
-                                </div>
-                            </div>
-                        )}
-                        <div ref={messagesEndRef} />
-                    </div>
-                </main>
-
-                {/* Input Area (Sticky Bottom) */}
-                <div className="flex-shrink-0 p-6 pt-2 bg-gradient-to-t from-brand-black via-brand-black to-transparent z-10">
-                    <div className="max-w-3xl mx-auto relative">
-                        <div className="flex items-center gap-2 p-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl transition-all focus-within:bg-white/10 focus-within:border-white/20">
-                            <button className="p-3 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-colors" title="Attach">
-                                <Paperclip className="w-5 h-5" />
-                            </button>
-
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyPress={handleKeyPress}
-                                placeholder="Ask about crypto prices, transfers, or swaps..."
-                                className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 text-sm px-2"
-                                disabled={isProcessing}
-                            />
-
-                            <button
-                                onClick={handleSend}
-                                disabled={isProcessing || !input.trim()}
-                                className="p-3 rounded-full bg-brand-orange text-white shadow-lg hover:bg-brand-orangeHover disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95"
-                            >
-                                <Send className="w-4 h-4 ml-0.5" />
-                            </button>
-                        </div>
-                        <div className="text-center mt-2">
-                            <span className="text-[10px] text-gray-600">AI can make mistakes. Verify important transactions.</span>
-                        </div>
+                        <span className="font-semibold text-sm tracking-wide text-white">Counsellor AI</span>
                     </div>
                 </div>
 
-                {/* Overlays (Balance, History, etc.) */}
-                {(showTransactionPreview || showBalance || showHistory) && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                        <div className="relative w-full max-w-lg">
-                            <button
-                                onClick={() => {
-                                    setShowTransactionPreview(false);
-                                    setShowBalance(false);
-                                    setShowHistory(false);
-                                    setCurrentIntent(null);
-                                }}
-                                className="absolute -top-12 right-0 p-2 text-white/50 hover:text-white"
-                            >
-                                Close
-                            </button>
+                <div className="p-5 border-b border-bg-border/40">
+                    <BalanceDisplay address={address} chainId={chainId} />
+                </div>
 
-                            {showTransactionPreview && currentIntent && (
-                                <TransactionPreview
-                                    intent={currentIntent}
-                                    address={address}
-                                    chainId={chainId}
-                                    onComplete={handleTransactionComplete}
-                                    onCancel={handleTransactionCancel}
-                                />
-                            )}
-                            {showBalance && <BalanceDisplay address={address} chainId={chainId} />}
-                            {showHistory && <TransactionHistory address={address} chainId={chainId} />}
+                <div className="flex-1 overflow-hidden">
+                    <CryptoSidebar currentChainId={chainId} />
+                </div>
+
+                <div className="p-4 border-t border-bg-border/40">
+                    <button
+                        onClick={onLogout}
+                        className="w-full py-3 px-4 rounded-lg text-xs font-medium text-text-dim hover:text-text-main hover:bg-white/5 transition-colors uppercase tracking-wider flex items-center justify-center gap-2"
+                    >
+                        Disconnect Wallet
+                    </button>
+                </div>
+            </div>
+
+            {/* CENTER MAIN AREA - Interaction Canvas */}
+            <div className="flex-1 flex flex-col relative z-10 min-w-0 bg-transparent">
+
+                {/* Header - Minimal & Anchored */}
+                <header className="h-16 flex items-center justify-between px-8 border-b border-bg-border/40 bg-bg-main/50 backdrop-blur-md sticky top-0 z-30">
+                    <div className="flex items-center gap-2 text-text-muted text-sm">
+                        <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></span>
+                        Network Active
+                    </div>
+                    <div className="text-xs font-mono text-text-dim">
+                        v1.0.4 • Secure Connection
+                    </div>
+                </header>
+
+                {/* Messages - The Scrollable Canvas */}
+                <div className="flex-1 overflow-y-auto scroll-smooth">
+                    <div className="max-w-3xl mx-auto w-full px-8 py-10 flex flex-col gap-8">
+                        {messages.map((msg, idx) => (
+                            <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-fade-in-up group`}>
+
+                                {/* Role Label - Subtle */}
+                                <span className={`text-[10px] uppercase tracking-widest mb-2 font-bold opacity-60 ${msg.role === 'user' ? 'text-text-dim mr-1' : 'text-primary ml-1'}`}>
+                                    {msg.role === 'user' ? 'You' : 'AI Assistant'}
+                                </span>
+
+                                {/* Message Content - High Readability */}
+                                <div className={`relative max-w-2xl text-[15px] leading-7 tracking-wide ${msg.role === 'user'
+                                        ? 'text-text-muted text-right font-light'
+                                        : 'text-text-main font-regular'
+                                    }`}>
+                                    {msg.content}
+
+                                    {/* Link Transaction to Message visually if active */}
+                                    {msg.role === 'assistant' && activeTransaction && idx === messages.length - 1 && (
+                                        <div className="absolute -left-4 top-0 bottom-0 w-[1px] bg-gradient-to-b from-primary/50 to-transparent opacity-50" />
+                                    )}
+                                </div>
+
+                                {/* Embedded Transaction Card */}
+                                {msg.role === 'assistant' && activeTransaction && idx === messages.length - 1 && (
+                                    <div className="mt-6 w-full max-w-xl animate-fade-in-up">
+                                        <TransactionPreview
+                                            intent={activeTransaction.intent}
+                                            address={address}
+                                            chainId={chainId}
+                                            onComplete={handleTransactionComplete}
+                                            onCancel={() => setActiveTransaction(null)}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Success State */}
+                                {msg.role === 'assistant' && msg.status === 'success' && (
+                                    <div className="mt-3 px-3 py-1.5 border border-green-500/20 bg-green-500/5 rounded-md inline-flex items-center gap-2 text-xs text-green-400 font-medium tracking-wide">
+                                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                                        Confirmed on Blockchain
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+
+                        {isLoading && (
+                            <div className="flex flex-col items-start animate-fade-in-up ml-1">
+                                <span className="text-[10px] uppercase tracking-widest mb-2 font-bold text-primary opacity-60">AI Assistant</span>
+                                <div className="flex items-center gap-1.5 h-6">
+                                    <div className="w-1.5 h-1.5 bg-primary/80 rounded-full animate-[bounce_1s_infinite_-0.3s]"></div>
+                                    <div className="w-1.5 h-1.5 bg-primary/80 rounded-full animate-[bounce_1s_infinite_-0.15s]"></div>
+                                    <div className="w-1.5 h-1.5 bg-primary/80 rounded-full animate-[bounce_1s_infinite]"></div>
+                                </div>
+                            </div>
+                        )}
+                        <div ref={messagesEndRef} className="h-4" />
+                    </div>
+                </div>
+
+                {/* Input Area - Focal Point */}
+                <div className="w-full border-t border-bg-border/40 bg-bg-main/80 backdrop-blur-xl p-6 pb-8 z-40">
+                    <div className="max-w-3xl mx-auto relative cursor-text group" onClick={(e) => {
+                        const input = e.currentTarget.querySelector('input');
+                        if (input) input.focus();
+                    }}>
+                        {/* Glow Effect on Focus */}
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-orange-600/30 rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 blur-md pointer-events-none" />
+
+                        <div className="relative bg-[#0F0F0F] border border-bg-border rounded-xl flex items-center p-2 shadow-xl transition-all group-focus-within:border-primary/50 group-focus-within:bg-[#141414]">
+                            <div className="pl-4 pr-3 text-text-dim group-focus-within:text-primary transition-colors">
+                                <Command size={18} strokeWidth={1.5} />
+                            </div>
+                            <input
+                                type="text"
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                placeholder="Describe a transaction or ask for balance..."
+                                className="flex-1 bg-transparent border-none text-text-main text-[15px] placeholder-text-dim/50 focus:ring-0 p-3 outline-none font-medium tracking-wide"
+                                disabled={isLoading}
+                                autoFocus
+                            />
+                            <button
+                                onClick={handleSend}
+                                disabled={!inputValue.trim() || isLoading}
+                                className="p-3 bg-text-main text-bg-main rounded-lg hover:bg-white/90 transform hover:scale-105 transition-all disabled:opacity-0 disabled:scale-95 disabled:pointer-events-none shadow-lg shadow-white/5"
+                            >
+                                <Send size={16} strokeWidth={2.5} />
+                            </button>
+                        </div>
+                        <div className="absolute -bottom-6 left-0 right-0 text-center">
+                            <p className="text-[10px] text-text-dim/60 font-medium tracking-widest uppercase">
+                                Enter to send • Securely Encrypted
+                            </p>
                         </div>
                     </div>
-                )}
+                </div>
             </div>
 
-            {/* Right Sidebar */}
-            <div className="hidden lg:block w-[320px] flex-shrink-0 border-l border-white/5 bg-black/20 backdrop-blur-md">
-                <CryptoSidebar currentChainId={chainId} />
+            {/* RIGHT SIDEBAR - Secondary Info */}
+            <div className="w-72 hidden xl:flex flex-col border-l border-bg-border/40 bg-bg-main/95 backdrop-blur-sm z-20 shrink-0">
+                <div className="h-16 flex items-center px-6 border-b border-bg-border/40">
+                    <h3 className="text-[11px] font-bold tracking-widest uppercase text-text-muted">Activity Log</h3>
+                </div>
+                <div className="flex-1 overflow-hidden p-0">
+                    <TransactionHistory address={address} chainId={chainId} />
+                </div>
             </div>
+
         </div>
     );
 };

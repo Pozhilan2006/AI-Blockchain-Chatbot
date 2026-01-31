@@ -8,6 +8,7 @@ import type {
     BuyTokenParams,
     SellTokenParams,
     TransferNFTParams,
+    TransactionRequest,
 } from '../types';
 import { validateAddress } from './ethereum';
 
@@ -502,5 +503,75 @@ export function formatIntentDescription(intent: Intent): string {
 
         default:
             return 'Unknown action';
+    }
+}
+
+interface AIResponse {
+    message: string;
+    intent?: Intent;
+    transaction?: TransactionRequest | any; // using any for SwapTransaction flexibility
+}
+
+// Main AI processing function
+export async function processAIRequest(input: string, address: string, chainId: number): Promise<AIResponse> {
+    const chainName = chainId === 1 ? 'ethereum' : chainId === 137 ? 'polygon' : 'bsc';
+    const intent = parseIntent(input, chainName);
+
+    // If param check fails or missing params
+    if (intent.missingParams.length > 0) {
+        return {
+            message: generateClarifyingQuestion(intent),
+            intent,
+        };
+    }
+
+    // Validate params
+    const validation = validateIntentParams(intent);
+    if (!validation.valid) {
+        return {
+            message: `I couldn't process that: ${validation.errors.join(', ')}. Could you clarify?`,
+            intent
+        };
+    }
+
+    // Respond based on intent
+    try {
+        switch (intent.intent) {
+            case 'TRANSFER_ETH':
+            case 'TRANSFER_TOKEN':
+            case 'SWAP_TOKENS':
+            case 'BUY_TOKEN':
+            case 'SELL_TOKEN':
+            case 'TRANSFER_NFT':
+                return {
+                    message: `I've prepared a transaction to ${formatIntentDescription(intent).toLowerCase()}. Please review and confirm below.`,
+                    intent,
+                    transaction: { to: '0x123' } // Placeholder, actual tx built in component
+                };
+
+            case 'CHECK_BALANCE':
+                return {
+                    message: intent.params.token
+                        ? `Checking your ${intent.params.token} balance...`
+                        : "Here is your current portfolio balance.",
+                    intent
+                };
+
+            case 'SHOW_HISTORY':
+                return {
+                    message: "Pulling up your recent transaction history.",
+                    intent
+                };
+
+            default:
+                return {
+                    message: "I'm not sure I understand. I can help you transfer assets, swap tokens, or check your balance.",
+                    intent
+                };
+        }
+    } catch (error: any) {
+        return {
+            message: `Something went wrong: ${error.message}`
+        };
     }
 }

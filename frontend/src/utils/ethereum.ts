@@ -17,6 +17,22 @@ export async function getProvider(): Promise<BrowserProvider> {
     return new BrowserProvider(window.ethereum);
 }
 
+// Connect Wallet
+export async function connectWallet(): Promise<{ address: string; chainId: number }> {
+    const provider = await getProvider();
+    const accounts = await provider.send("eth_requestAccounts", []);
+    const network = await provider.getNetwork();
+
+    if (accounts.length === 0) {
+        throw new Error('No accounts authorized');
+    }
+
+    return {
+        address: accounts[0],
+        chainId: Number(network.chainId)
+    };
+}
+
 // Get signer
 export async function getSigner() {
     const provider = await getProvider();
